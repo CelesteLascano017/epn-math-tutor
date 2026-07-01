@@ -1,15 +1,11 @@
 from fastapi import FastAPI
-from pydantic import BaseModel
 
-app = FastAPI() # Crea la apliación web
+from backend.api.routes import router
 
-class QuestionRequest(BaseModel):
-    question: str
+app = FastAPI(
+    title="TutorMath API",
+    version="1.0.0"
+)
 
-@app.get("/") # Crea una ruta
-def home():
-    return {"mensaje": "Tutor Matemático funcionando"}
+app.include_router(router)
 
-@app.post("/ask") # Crea una ruta para recibir preguntas
-def ask_question(request: QuestionRequest):
-    return {"respuesta": f"Recibí tu pregunta: {request.question}"}

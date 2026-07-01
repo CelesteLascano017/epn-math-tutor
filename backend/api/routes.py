@@ -1,6 +1,8 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
 
+from backend.llm.service import generate_response
+
 router = APIRouter()
 
 
@@ -17,8 +19,10 @@ def home():
 
 @router.post("/ask")
 def ask_question(request: QuestionRequest):
+
+    answer = generate_response(request.question)
+    
     return {
-        "response": f"I received your question: {request.question}"
+        "response": answer
     }
 
-    
