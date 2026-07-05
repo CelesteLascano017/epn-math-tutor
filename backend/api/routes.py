@@ -22,7 +22,5 @@ def ask_question(request: QuestionRequest):
 
     answer = generate_response(request.question)
     
-    return {
-        "response": answer
-    }
+    return answer
 
