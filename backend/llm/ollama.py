@@ -20,5 +20,5 @@ def generate_response(question: str) -> str:
 
 
 if __name__ == "__main__":
-    answer = generate_response("What is the capital of France?")
+    answer = generate_response("What is 2 + 2?")
     print(answer)
