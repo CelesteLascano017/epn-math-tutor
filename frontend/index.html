@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Tutor de Matemáticas Fundamentales para estudiantes de la Escuela Politécnica Nacional." />
+  <title>TutorMath | Tutor de Matemáticas - EPN</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet" />
+
+  <!-- KaTeX -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" />
+
+  <!-- App styles -->
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app">
+
+    <!-- ─── Left sidebar ─────────────────────────────────────────── -->
+    <aside id="sidebar">
+
+      <!-- Brand row -->
+      <div id="sidebar-brand">
+        <span class="brand-star" aria-hidden="true">&#9733;</span>
+        <span class="brand-name">TutorMath</span>
+        <!-- Decorative icon — non-interactive, no event listener, not a button -->
+        <span class="brand-icon-right" aria-hidden="true">&#10006;</span>
+      </div>
+
+      <!-- New chat action -->
+      <button id="new-chat-btn" type="button">
+        <span class="new-chat-icon" aria-hidden="true">&#8853;</span>
+        Nuevo chat
+      </button>
+
+      <!-- History list — items injected by JS after first successful response -->
+      <nav id="history-list" aria-label="Historial de conversaciones"></nav>
+
+      <!-- Sidebar footer label -->
+      <div id="sidebar-footer" aria-hidden="true">
+        <span class="footer-icon">&#10006;</span>
+        <span>Historial</span>
+      </div>
+
+    </aside>
+
+    <!-- ─── Main panel ─────────────────────────────────────────────── -->
+    <main id="main-panel">
+
+      <!-- Empty state — visible on initial load and after "Nuevo chat" -->
+      <div id="empty-state">
+        <h1 id="app-title">TutorMath</h1>
+        <div id="composer-empty" class="composer-wrap">
+          <span class="composer-plus" aria-hidden="true">+</span>
+          <textarea
+            id="input-empty"
+            class="composer-input"
+            placeholder="Dime tus dudas"
+            rows="1"
+            aria-label="Tu pregunta"
+          ></textarea>
+          <button id="send-empty" class="send-btn send-btn--circle" type="button" aria-label="Enviar pregunta">
+            &#8593;
+          </button>
+        </div>
+      </div>
+
+      <!-- Conversation state — hidden on load, shown after first send -->
+      <div id="conversation" hidden>
+
+        <!-- Conversation title bar -->
+        <div id="conv-title-bar">
+          <h2 id="conv-title"></h2>
+        </div>
+
+        <!-- Scrollable chat area -->
+        <div id="chat-area" role="log" aria-live="polite" aria-label="Conversación"></div>
+
+        <!-- Fixed conversation composer -->
+        <div id="composer-conv" class="composer-wrap composer-wrap--conv">
+          <span class="composer-plus" aria-hidden="true">+</span>
+          <textarea
+            id="input-conv"
+            class="composer-input"
+            placeholder="Dime tus dudas"
+            rows="1"
+            aria-label="Tu pregunta"
+          ></textarea>
+          <button id="send-conv" class="send-btn send-btn--flat" type="button" aria-label="Enviar pregunta">
+            &#8593;
+          </button>
+        </div>
+
+      </div>
+
+    </main>
+  </div>
+
+  <!-- KaTeX runtime (defer so DOM is ready before app.js runs) -->
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+
+  <!-- App logic -->
+  <script src="app.js"></script>
+</body>
+</html>
