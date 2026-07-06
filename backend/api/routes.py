@@ -1,13 +1,10 @@
 from fastapi import APIRouter
-from pydantic import BaseModel
+
 
 from backend.llm.service import generate_response
+from backend.schemas.chat import QuestionRequest, TutorResponse
 
 router = APIRouter()
-
-
-class QuestionRequest(BaseModel):
-    question: str
 
 
 @router.get("/")
@@ -17,7 +14,7 @@ def home():
     }
 
 
-@router.post("/ask")
+@router.post("/ask", response_model=TutorResponse)
 def ask_question(request: QuestionRequest):
 
     answer = generate_response(request.question)
