@@ -9,6 +9,8 @@ def generate_response(question: str) -> TutorResponse:
     prompt = build_prompt(question)
 
     raw_response = ollama_generate_response(prompt)
+    print("RAW OLLAMA RESPONSE:")
+    print(raw_response)
     parsed_response = json.loads(raw_response)
     validated_response = TutorResponse.model_validate(parsed_response)
 
