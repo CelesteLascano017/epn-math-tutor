@@ -451,7 +451,6 @@ body {
   font-size: 14px;
   line-height: 1.75;
   color: var(--text-primary);
-  white-space: pre-wrap;
   word-break: break-word;
 }
 
@@ -477,7 +476,6 @@ body {
   font-size: 13.5px;
   line-height: 1.7;
   color: var(--text-primary);
-  white-space: pre-wrap;
   word-break: break-word;
 }
 
@@ -501,8 +499,74 @@ body {
   font-size: 13.5px;
   line-height: 1.75;
   color: var(--text-on-solution);
-  white-space: pre-wrap;
   word-break: break-word;
+}
+
+/* ── Markdown elements inside all block bodies ── */
+
+/* Paragraphs: first child has no top margin to avoid extra whitespace */
+.block-explanation p,
+.block-definition .block-body p,
+.block-formal-solution .block-body p {
+  margin: 0 0 0.6em;
+}
+.block-explanation p:last-child,
+.block-definition .block-body p:last-child,
+.block-formal-solution .block-body p:last-child {
+  margin-bottom: 0;
+}
+
+/* Bold & italic */
+.block-explanation strong,
+.block-definition .block-body strong,
+.block-formal-solution .block-body strong {
+  font-weight: 600;
+}
+.block-explanation em,
+.block-definition .block-body em,
+.block-formal-solution .block-body em {
+  font-style: italic;
+}
+
+/* Inline code */
+.block-explanation code,
+.block-definition .block-body code,
+.block-formal-solution .block-body code {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.88em;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 4px;
+  padding: 0.1em 0.35em;
+}
+.block-formal-solution .block-body code {
+  background: rgba(0, 0, 0, 0.08);
+  color: var(--text-on-solution);
+}
+
+/* Lists */
+.block-explanation ul,
+.block-explanation ol,
+.block-definition .block-body ul,
+.block-definition .block-body ol,
+.block-formal-solution .block-body ul,
+.block-formal-solution .block-body ol {
+  padding-left: 1.4em;
+  margin: 0.4em 0 0.6em;
+}
+.block-explanation li,
+.block-definition .block-body li,
+.block-formal-solution .block-body li {
+  margin-bottom: 0.25em;
+  line-height: 1.6;
+}
+
+/* Blockquote (occasional hints) */
+.block-explanation blockquote {
+  border-left: 3px solid var(--border-definition);
+  padding-left: 12px;
+  margin: 0.5em 0;
+  color: var(--text-secondary);
+  font-style: italic;
 }
 
 /* ── Error block ── */
@@ -545,8 +609,8 @@ body {
   overflow-x: auto;
 }
 
-/* Light text KaTeX inside formal solution (dark text context) */
-.block-formal-solution .katex {
+/* Dark text KaTeX inside formal solution (light card background) */
+.block-formal-solution .block-body .katex {
   color: var(--text-on-solution);
 }
 

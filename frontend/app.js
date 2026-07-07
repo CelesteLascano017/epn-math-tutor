@@ -47,6 +47,29 @@ const KATEX_OPTIONS = {
   throwOnError: false, // gracefully skip unrecognized expressions
 };
 
+/**
+ * Converts a Markdown string to an HTML string using marked.js.
+ *
+ * Rendering order matters:
+ *   1. marked.parse() converts **bold**, _italic_, lists, etc. to HTML.
+ *   2. runKaTeX() is called on the element AFTER innerHTML is set, so KaTeX
+ *      processes the resulting DOM nodes (including those inside <p>, <li>, etc.)
+ *      and correctly renders $...$ and \\(...\\) expressions.
+ *
+ * Security: the content comes from the LLM (internal), not the end-user.
+ * marked defaults to escaping raw HTML in the source, which is sufficient here.
+ */
+function renderMarkdown(text) {
+  if (typeof marked === 'undefined') {
+    // marked.js not loaded — fall back to plain text
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+  // Use marked in async:false (default) mode — returns an HTML string
+  return marked.parse(text);
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // 2. In-memory state
 // ─────────────────────────────────────────────────────────────────────────────
@@ -405,7 +428,7 @@ function renderBlock(block) {
 function renderExplanationBlock(content) {
   const el = document.createElement('div');
   el.className = 'block-explanation';
-  el.textContent = content;
+  el.innerHTML = renderMarkdown(content);
   runKaTeX(el);
   return el;
 }
@@ -420,7 +443,7 @@ function renderDefinitionBlock(content) {
 
   const body = document.createElement('div');
   body.className = 'block-body';
-  body.textContent = content;
+  body.innerHTML = renderMarkdown(content);
 
   el.appendChild(label);
   el.appendChild(body);
@@ -440,7 +463,7 @@ function renderFormalSolutionBlock(content) {
 
   const body = document.createElement('div');
   body.className = 'block-body';
-  body.textContent = content;
+  body.innerHTML = renderMarkdown(content);
 
   el.appendChild(heading);
   el.appendChild(body);
