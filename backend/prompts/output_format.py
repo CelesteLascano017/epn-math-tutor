@@ -33,5 +33,6 @@ JSON output rules:
 - Return ONLY the JSON. No text before or after it.
 - No Markdown code fences (no ```json).
 - Escape all LaTeX backslashes as \\\\ (e.g. \\\\neg, \\\\Rightarrow, \\\\wedge).
+- IMPORTANT: You MUST wrap all math symbols and equations in $ ... $ for inline math or $$ ... $$ for display math. If you don't use $...$, the math will not render correctly.
 - Write all content in Spanish.
 """
