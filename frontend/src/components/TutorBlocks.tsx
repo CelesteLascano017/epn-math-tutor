@@ -152,7 +152,7 @@ function preprocessLaTeX(content: string) {
 
   // 4. Fix single backslashes in matrix/cases environments (e.g. ` \ ` instead of ` \\ `)
   // LLMs often output `\\` in JSON which becomes `\` in the Python string.
-  processed = processed.replace(/\\begin\{([a-z*]+)\}([\s\S]*?)\\end\{\1\}/g, (match, env, inner) => {
+  processed = processed.replace(/\\begin\{([a-z*]+)\}([\s\S]*?)\\end\{\1\}/g, (_match, env, inner) => {
     // Replace ` \ ` with ` \\ ` to fix matrix row breaks
     const fixedInner = inner.replace(/ \\ /g, ' \\\\ ')
     return `\\begin{${env}}${fixedInner}\\end{${env}}`
@@ -284,27 +284,23 @@ function ExplanationBlock({ content }: { content: string }) {
 
 function DefinitionBlock({ content }: { content: string }) {
   return (
-    <div className="tutor-card-definition rounded-r-xl border-l-[3px] border-primary bg-primary/10 px-5 py-4">
-      <span className="mb-2 block text-[0.65rem] font-extrabold uppercase tracking-[0.15em] text-primary">
+    <section className="text-[15px] text-foreground/90">
+      <p className="mb-2 font-semibold text-foreground">
         Definición
-      </span>
-      <div className="text-[14px] text-foreground/90">
-        <MathMarkdown content={content} />
-      </div>
-    </div>
+      </p>
+      <MathMarkdown content={content} />
+    </section>
   )
 }
 
 function FormalSolutionBlock({ content }: { content: string }) {
   return (
-    <div className="tutor-card-proof rounded-xl bg-default-100/60 ring-1 ring-default-200 px-5 py-4">
-      <span className="mb-3 block text-[0.65rem] font-extrabold uppercase tracking-[0.15em] text-warning-600 dark:text-warning-400">
-        Demostración
-      </span>
-      <div className="text-[14px] text-foreground/90">
-        <MathMarkdown content={content} />
-      </div>
-    </div>
+    <section className="text-[15px] text-foreground/90">
+      <p className="mb-2 font-semibold text-foreground">
+        Desarrollo formal
+      </p>
+      <MathMarkdown content={content} />
+    </section>
   )
 }
 
@@ -312,15 +308,13 @@ function FormalSolutionBlock({ content }: { content: string }) {
 
 /**
  * Renders an array of ContentBlocks from the TutorMath backend.
- * Each block type gets its own visual treatment:
- *  - explanation  → inline prose (no card)
- *  - definition   → blue left-bordered card
- *  - formal_solution → subtle grey card with "Demostración" label
+ * Blocks form one continuous answer; formal sections use restrained headings
+ * instead of cards so the explanation reads as a coherent lesson.
  * All block content supports Markdown (bold, lists, code) and KaTeX math ($...$).
  */
 export function TutorBlocks({ blocks }: { blocks: ContentBlock[] }) {
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-4">
       {blocks.map((block, i) => {
         switch (block.type) {
           case 'definition':
