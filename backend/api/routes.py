@@ -1,5 +1,6 @@
 import json
 import time
+import unicodedata
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -9,7 +10,12 @@ from backend.config import LLMProvider
 from backend.db.database import get_db
 from backend.db.models import Conversation, DBMessage
 from backend.llm.service import generate_response
-from backend.rag.store import retrieve_context
+from backend.rag.references import resolve_document_reference
+from backend.rag.store import (
+    RetrievedChunk,
+    link_documents_to_conversation,
+    retrieve_context,
+)
 from backend.schemas.chat import (
     ChatRequest,
     ChatResponse,
@@ -108,21 +114,25 @@ def chat(
     # 5. Retrieve relevant document context for RAG
     rag_context = None
     sources: list[Source] = []
-    attachment_ids = [att.id for att in current_message.attachments if att.id]
+    attachment_ids = list(dict.fromkeys(
+        att.id for att in current_message.attachments if att.id
+    ))
     try:
+        linked_attachment_ids = link_documents_to_conversation(
+            db,
+            conversation_id=conv.id,
+            document_ids=attachment_ids,
+        )
+        retrieval_query = _build_retrieval_query(current_question, history)
+        document_reference = resolve_document_reference(current_question, history)
         rag_context, retrieved = retrieve_context(
             db,
-            current_question,
-            document_ids=attachment_ids or None,
+            retrieval_query,
+            conversation_id=conv.id,
+            document_ids=(linked_attachment_ids if attachment_ids else None),
+            reference=document_reference,
         )
-        sources = [
-            Source(
-                id=chunk.chunk_id,
-                title=chunk.title,
-                snippet=chunk.text[:280],
-            )
-            for chunk in retrieved
-        ]
+        sources = _document_sources(retrieved)
     except Exception as exc:
         print(f"[rag] Retrieval skipped: {exc}")
 
@@ -168,6 +178,52 @@ def chat(
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
+
+def _build_retrieval_query(question: str, history: list[dict]) -> str:
+    """Resolve short follow-ups using only prior turns from the current chat."""
+    normalized = unicodedata.normalize("NFKD", question.lower())
+    normalized = "".join(
+        char for char in normalized if not unicodedata.combining(char)
+    )
+    reference_markers = (
+        "este pdf", "esta pagina", "este ejercicio", "ese ejercicio",
+        "el enunciado", "lo que", "lo anterior", "esa parte", "eso",
+        "continua", "sigue", "por que",
+    )
+    short_follow_up = len(question) < 80 and normalized.strip().startswith(
+        ("y ", "ahora ", "entonces ", "puedes ", "como ")
+    )
+    needs_context = short_follow_up or any(
+        marker in normalized for marker in reference_markers
+    )
+    if not needs_context:
+        return question
+
+    previous_user_turns = [
+        item["content"] for item in history if item.get("role") == "user"
+    ]
+    if not previous_user_turns:
+        return question
+    return f"{previous_user_turns[-1]}\nPregunta de seguimiento: {question}"
+
+
+def _document_sources(retrieved: list[RetrievedChunk]) -> list[Source]:
+    """Expose one source per document, even when several chunks were used."""
+    sources: list[Source] = []
+    seen_document_ids: set[str] = set()
+    for chunk in retrieved:
+        if chunk.document_id in seen_document_ids:
+            continue
+        seen_document_ids.add(chunk.document_id)
+        sources.append(
+            Source(
+                id=chunk.document_id,
+                title=chunk.title,
+                snippet=chunk.text[:280],
+            )
+        )
+    return sources
+
 
 def _derive_title(text: str, max_len: int = 40) -> str:
     clean = " ".join(text.split()).strip()
