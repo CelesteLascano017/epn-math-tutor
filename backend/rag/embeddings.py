@@ -7,27 +7,32 @@ import requests
 from backend.config import settings
 
 
-def embed_texts(texts: list[str]) -> list[list[float]]:
+def embed_texts(texts: list[str], *, batch_size: int = 32) -> list[list[float]]:
     if not texts:
         return []
 
-    payload = {
-        "model": settings.ollama_embedding_model,
-        "input": texts,
-        "truncate": True,
-    }
-    response = requests.post(
-        settings.ollama_embedding_url,
-        json=payload,
-        timeout=120,
-    )
-    response.raise_for_status()
-    data = response.json()
-    embeddings = data.get("embeddings")
-    if not isinstance(embeddings, list):
-        raise RuntimeError("Ollama no devolvio embeddings validos.")
-
-    return [_normalize([float(v) for v in emb]) for emb in embeddings]
+    result: list[list[float]] = []
+    for start in range(0, len(texts), batch_size):
+        batch = texts[start : start + batch_size]
+        payload = {
+            "model": settings.ollama_embedding_model,
+            "input": batch,
+            "truncate": True,
+        }
+        response = requests.post(
+            settings.ollama_embedding_url,
+            json=payload,
+            timeout=120,
+        )
+        response.raise_for_status()
+        embeddings = response.json().get("embeddings")
+        if not isinstance(embeddings, list) or len(embeddings) != len(batch):
+            raise RuntimeError("Ollama no devolvio embeddings validos.")
+        result.extend(
+            _normalize([float(value) for value in embedding])
+            for embedding in embeddings
+        )
+    return result
 
 
 def embed_query(text: str) -> list[float]:
