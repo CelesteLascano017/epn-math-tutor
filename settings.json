@@ -1,0 +1,13 @@
+{
+  "active_provider": "ollama",
+  "ngrok_url": "https://tipper-skinning-directive.ngrok-free.dev/generate",
+  "ollama_url": "http://26.85.13.151:11434/api/chat",
+  "ollama_model": "qwen25-epn-tutor",
+  "ollama_embedding_url": "http://26.85.13.151:11434/api/embed",
+  "ollama_embedding_model": "nomic-embed-text",
+  "rag_enabled": true,
+  "rag_top_k": 4,
+  "rag_min_score": 0.25,
+  "rag_chunk_size": 1200,
+  "rag_chunk_overlap": 200
+}
