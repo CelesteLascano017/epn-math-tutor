@@ -6,7 +6,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from backend.api.conversations import router as conversations_router
 from backend.api.me import router as me_router
 from backend.api.models_route import router as models_router
+from backend.api.rag_route import router as rag_router
 from backend.api.routes import router as chat_router
+from backend.api.settings_route import router as settings_router
 from backend.db.database import init_db
 
 
@@ -44,3 +46,5 @@ app.include_router(chat_router)          # GET /, POST /ask, POST /chat
 app.include_router(conversations_router) # GET/POST /conversations, GET/PATCH/DELETE /conversations/{id}
 app.include_router(me_router)            # GET /me
 app.include_router(models_router)        # GET /models
+app.include_router(settings_router)      # GET /settings, PUT /settings/provider, PUT /settings/urls
+app.include_router(rag_router)           # GET/POST/DELETE /rag/documents
