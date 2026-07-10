@@ -21,6 +21,11 @@ class Conversation(Base):
         cascade="all, delete-orphan",
         order_by="DBMessage.created_at",
     )
+    document_links: Mapped[list["RAGConversationDocument"]] = relationship(
+        "RAGConversationDocument",
+        back_populates="conversation",
+        cascade="all, delete-orphan",
+    )
 
 
 class DBMessage(Base):
@@ -48,6 +53,7 @@ class RAGDocument(Base):
     mime_type: Mapped[str] = mapped_column(Text, nullable=False, default="text/plain")
     source_path: Mapped[str | None] = mapped_column(Text, nullable=True)
     content_sha256: Mapped[str] = mapped_column(Text, nullable=False, index=True)
+    index_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     created_at: Mapped[float] = mapped_column(nullable=False, default=time.time)
 
     chunks: Mapped[list["RAGChunk"]] = relationship(
@@ -55,6 +61,35 @@ class RAGDocument(Base):
         back_populates="document",
         cascade="all, delete-orphan",
         order_by="RAGChunk.chunk_index",
+    )
+    conversation_links: Mapped[list["RAGConversationDocument"]] = relationship(
+        "RAGConversationDocument",
+        back_populates="document",
+        cascade="all, delete-orphan",
+    )
+
+
+class RAGConversationDocument(Base):
+    """Explicitly scopes a library document to a conversation."""
+
+    __tablename__ = "rag_conversation_documents"
+
+    conversation_id: Mapped[str] = mapped_column(
+        ForeignKey("conversations.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    document_id: Mapped[str] = mapped_column(
+        ForeignKey("rag_documents.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    created_at: Mapped[float] = mapped_column(nullable=False, default=time.time)
+    last_used_at: Mapped[float] = mapped_column(nullable=False, default=time.time)
+
+    conversation: Mapped["Conversation"] = relationship(
+        "Conversation", back_populates="document_links"
+    )
+    document: Mapped["RAGDocument"] = relationship(
+        "RAGDocument", back_populates="conversation_links"
     )
 
 
@@ -68,6 +103,12 @@ class RAGChunk(Base):
     chunk_index: Mapped[int] = mapped_column(Integer, nullable=False)
     text: Mapped[str] = mapped_column(Text, nullable=False)
     embedding: Mapped[str] = mapped_column(Text, nullable=False)
+    page_start: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    page_end: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    exercise_number: Mapped[str | None] = mapped_column(Text, nullable=True)
+    exercise_ordinal: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    item_label: Mapped[str | None] = mapped_column(Text, nullable=True)
+    heading: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[float] = mapped_column(nullable=False, default=time.time)
 
     document: Mapped["RAGDocument"] = relationship(
