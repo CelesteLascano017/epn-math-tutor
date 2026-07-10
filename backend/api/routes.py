@@ -5,13 +5,16 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
+from backend.config import LLMProvider
 from backend.db.database import get_db
 from backend.db.models import Conversation, DBMessage
 from backend.llm.service import generate_response
+from backend.rag.store import retrieve_context
 from backend.schemas.chat import (
     ChatRequest,
     ChatResponse,
     QuestionRequest,
+    Source,
     TutorResponse,
 )
 
@@ -51,7 +54,8 @@ def chat(
     if not request.messages or request.messages[-1].role != "user":
         raise HTTPException(status_code=400, detail="Last message must be from user")
 
-    current_question = request.messages[-1].content
+    current_message = request.messages[-1]
+    current_question = current_message.content
 
     # 2. Get or lazily create the conversation
     conv = db.query(Conversation).filter(
@@ -101,10 +105,43 @@ def chat(
     )
     db.add(user_msg)
 
-    # 5. Generate response from LLM
-    tutor_response = generate_response(current_question, history=history)
+    # 5. Retrieve relevant document context for RAG
+    rag_context = None
+    sources: list[Source] = []
+    attachment_ids = [att.id for att in current_message.attachments if att.id]
+    try:
+        rag_context, retrieved = retrieve_context(
+            db,
+            current_question,
+            document_ids=attachment_ids or None,
+        )
+        sources = [
+            Source(
+                id=chunk.chunk_id,
+                title=chunk.title,
+                snippet=chunk.text[:280],
+            )
+            for chunk in retrieved
+        ]
+    except Exception as exc:
+        print(f"[rag] Retrieval skipped: {exc}")
 
-    # 6. Save assistant response (blocks serialized as JSON string)
+    provider = None
+    if request.model:
+        try:
+            provider = LLMProvider(request.model)
+        except ValueError:
+            raise HTTPException(status_code=422, detail="Invalid model/provider selected.")
+
+    # 6. Generate response from LLM
+    tutor_response = generate_response(
+        current_question,
+        history=history,
+        rag_context=rag_context,
+        provider=provider,
+    )
+
+    # 7. Save assistant response (blocks serialized as JSON string)
     blocks_json = json.dumps(
         [b.model_dump() for b in tutor_response.blocks],
         ensure_ascii=False,
@@ -120,11 +157,12 @@ def chat(
     conv.updated_at = time.time()
     db.commit()
 
-    # 7. Return structured response
+    # 8. Return structured response
     plain_text = "\n\n".join(b.content for b in tutor_response.blocks)
     return ChatResponse(
         delta=plain_text,
         blocks=tutor_response.blocks,
+        sources=sources,
         done=True,
     )
 
