@@ -1,0 +1,126 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light dark;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* --------------------------------------------------------------------------
+   Custom, subtle scrollbars to match the dark, modern aesthetic.
+   -------------------------------------------------------------------------- */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.12);
+  border-radius: 9999px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.22);
+}
+
+.light *::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.15);
+}
+
+/* Typing indicator dots ---------------------------------------------------- */
+@keyframes typing-bounce {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+  30% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+}
+
+.typing-dot {
+  animation: typing-bounce 1.2s infinite ease-in-out;
+}
+.typing-dot:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.typing-dot:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+/* --------------------------------------------------------------------------
+   KaTeX formula styling — proper integration with the dark theme
+   -------------------------------------------------------------------------- */
+
+/* Ensure KaTeX formulas inherit the text color from their parent */
+.katex {
+  color: inherit;
+  font-size: 1.05em;
+}
+
+/* Inline math should blend naturally with surrounding text */
+.katex .katex-html {
+  color: inherit;
+}
+
+/* Display math gets a bit of breathing room */
+.katex-display {
+  margin: 0.75em 0 !important;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0.25em 0;
+}
+
+/* Fix KaTeX display math scrollbar for long equations */
+.katex-display > .katex {
+  white-space: nowrap;
+}
+
+/* Ensure math inside lists doesn't break layout */
+li .katex-display {
+  margin: 0.5em 0 !important;
+}
+
+/* --------------------------------------------------------------------------
+   Tutor card entrance animations
+   -------------------------------------------------------------------------- */
+@keyframes card-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.tutor-card-definition,
+.tutor-card-proof {
+  animation: card-slide-in 0.3s ease-out;
+}
