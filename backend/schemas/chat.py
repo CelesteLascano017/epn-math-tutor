@@ -1,6 +1,6 @@
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 # ── Existing schemas (used by /ask legacy endpoint) ──────────────────────────
@@ -14,15 +14,30 @@ class ContentBlock(BaseModel):
     content: str
 
 
+class Source(BaseModel):
+    id: str
+    title: str
+    url: str | None = None
+    snippet: str | None = None
+
+
 class TutorResponse(BaseModel):
     blocks: list[ContentBlock]
 
 
 # ── New schemas for the /chat endpoint (chatbot-ui compatible) ───────────────
 
+class AttachmentIn(BaseModel):
+    id: str
+    name: str | None = None
+    mimeType: str | None = None
+    url: str | None = None
+
+
 class ChatMessage(BaseModel):
     role: Literal["user", "assistant", "system"]
     content: str  # plain text for user; JSON string of blocks for assistant
+    attachments: list[AttachmentIn] = Field(default_factory=list)
 
 
 class ChatRequest(BaseModel):
@@ -35,6 +50,7 @@ class ChatResponse(BaseModel):
     """Non-streaming response for /chat. Frontend treats delta as the text to display."""
     delta: str          # content as plain markdown (fallback / copy text)
     blocks: list[ContentBlock]  # structured blocks for rich card rendering
+    sources: list[Source] = []
     done: bool = True
 
 
