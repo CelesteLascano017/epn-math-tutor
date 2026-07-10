@@ -1,7 +1,7 @@
 import time
 import uuid
 
-from sqlalchemy import ForeignKey, Text
+from sqlalchemy import ForeignKey, Integer, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.db.database import Base
@@ -37,4 +37,39 @@ class DBMessage(Base):
 
     conversation: Mapped["Conversation"] = relationship(
         "Conversation", back_populates="messages"
+    )
+
+
+class RAGDocument(Base):
+    __tablename__ = "rag_documents"
+
+    id: Mapped[str] = mapped_column(primary_key=True, default=lambda: str(uuid.uuid4()))
+    filename: Mapped[str] = mapped_column(Text, nullable=False)
+    mime_type: Mapped[str] = mapped_column(Text, nullable=False, default="text/plain")
+    source_path: Mapped[str | None] = mapped_column(Text, nullable=True)
+    content_sha256: Mapped[str] = mapped_column(Text, nullable=False, index=True)
+    created_at: Mapped[float] = mapped_column(nullable=False, default=time.time)
+
+    chunks: Mapped[list["RAGChunk"]] = relationship(
+        "RAGChunk",
+        back_populates="document",
+        cascade="all, delete-orphan",
+        order_by="RAGChunk.chunk_index",
+    )
+
+
+class RAGChunk(Base):
+    __tablename__ = "rag_chunks"
+
+    id: Mapped[str] = mapped_column(primary_key=True, default=lambda: str(uuid.uuid4()))
+    document_id: Mapped[str] = mapped_column(
+        ForeignKey("rag_documents.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    chunk_index: Mapped[int] = mapped_column(Integer, nullable=False)
+    text: Mapped[str] = mapped_column(Text, nullable=False)
+    embedding: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[float] = mapped_column(nullable=False, default=time.time)
+
+    document: Mapped["RAGDocument"] = relationship(
+        "RAGDocument", back_populates="chunks"
     )

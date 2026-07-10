@@ -1,9 +1,41 @@
 import json
 import re
+import requests
 
+from backend.config import LLMProvider, settings
 from backend.llm.colab import generate_response as colab_generate_response
-from backend.prompts.builder import build_prompt
+from backend.llm.ollama import generate_response as ollama_generate_response
+from backend.prompts.builder import build_messages, build_prompt
 from backend.schemas.chat import ContentBlock, TutorResponse
+
+
+# ---------------------------------------------------------------------------
+# Provider dispatch
+# ---------------------------------------------------------------------------
+
+def _call_llm(
+    question: str, 
+    history: list[dict] | None = None,
+    rag_context: str | None = None,
+    provider_override: LLMProvider | None = None,
+) -> str:
+    """
+    Route the request to the currently active LLM provider.
+
+    Ollama uses a structured messages list (/api/chat).
+    ngrok (Colab) uses a flat string prompt (/api/generate).
+    """
+    provider = provider_override or settings.active_provider
+
+    if provider == LLMProvider.OLLAMA:
+        print(f"[service] Using Ollama  → {settings.ollama_url}  model={settings.ollama_model}")
+        messages = build_messages(question, history=history, rag_context=rag_context)
+        return ollama_generate_response(messages)
+
+    # Default: ngrok / Colab
+    print(f"[service] Using ngrok  → {settings.ngrok_url}")
+    prompt = build_prompt(question, history=history, rag_context=rag_context)
+    return colab_generate_response(prompt)
 
 
 # ---------------------------------------------------------------------------
@@ -94,6 +126,8 @@ def _error_response(message: str) -> TutorResponse:
 def generate_response(
     question: str,
     history: list[dict] | None = None,
+    rag_context: str | None = None,
+    provider: LLMProvider | None = None,
 ) -> TutorResponse:
     """
     Generate a tutor response for the given question.
@@ -103,11 +137,29 @@ def generate_response(
         history:  Optional list of previous {role, content} dicts representing
                   the conversation so far (excluding the current question).
                   Used to build conversation context in the prompt.
+        rag_context: Optional context extracted from uploaded documents.
     """
-    prompt = build_prompt(question, history=history)
-    raw_response = colab_generate_response(prompt)
+    try:
+        raw_response = _call_llm(
+            question,
+            history=history,
+            rag_context=rag_context,
+            provider_override=provider,
+        )
+    except requests.exceptions.HTTPError as exc:
+        err_msg = "Error de comunicación con el modelo de IA."
+        if exc.response is not None:
+            if exc.response.status_code == 404:
+                err_msg = f"No se encontró el modelo '{settings.ollama_model}' en el servidor Ollama. Verifica el nombre en los Ajustes."
+            else:
+                err_msg = f"El servidor LLM reportó un error ({exc.response.status_code}). Verifica la consola."
+        print(f"[service] HTTP Error: {exc}")
+        return _error_response(err_msg)
+    except Exception as exc:
+        print(f"[service] LLM connection error: {exc}")
+        return _error_response("No se pudo conectar con el proveedor de IA. Revisa tu conexión o configuración.")
 
-    print("RAW COLAB RESPONSE:")
+    print("RAW LLM RESPONSE:")
     print(raw_response)
 
     sanitized = _sanitize_json(raw_response)
