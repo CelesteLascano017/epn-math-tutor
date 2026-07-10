@@ -32,8 +32,8 @@ def generate_response(messages: list[dict]) -> str:
         "options": {
             "temperature": 0.2,
             "top_p": 0.9,
-            "num_ctx": 4096,
-            "num_predict": 1024,
+            "num_ctx": 8192,
+            "num_predict": 1536,
             "repeat_penalty": 1.05,
         }
     }
@@ -46,4 +46,3 @@ def generate_response(messages: list[dict]) -> str:
     response.raise_for_status()
 
     return response.json()["message"]["content"]
-
